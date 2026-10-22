@@ -79,12 +79,22 @@ Mantenha toda a pasta do projeto junta: os `.sh` dependem de `lib/` e `steamfix/
 
 ```text
 [1] Preparar e jogar
-[2] Opções avançadas
-[3] Sair
+[2] Aplicar correção sem abrir o jogo
+[3] Opções avançadas
+[4] Sair
 ```
 
 Para uso normal, escolha **Preparar e jogar**. As opções técnicas ficam em
 **Opções avançadas**, que tem um botão **Voltar** para retornar ao menu principal.
+
+Se quiser jogar depois pela Steam, escolha **Aplicar correção sem abrir o jogo**.
+Essa opção configura os overrides usando Proton, mas não executa o jogo.
+
+**Não há redirecionamento automático para “servidores do OnlineFix”.** O assistente
+configura o carregamento das DLLs locais; as DLLs e o jogo determinam os serviços
+usados, que podem continuar sendo da Steam. Aplicar overrides não muda por si só
+servidores, certificados, AppIDs ou compatibilidade entre salas. Não é possível
+garantir a conexão multiplayer apenas pela conclusão da configuração.
 
 ## Navegação na TUI
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## Próxima versão
+
+- Ação principal para aplicar a configuração sem iniciar o jogo.
+- Documentação esclarece que overrides não redirecionam servidores automaticamente.
+
 ## 1.1.0
 
 - TUI em tela cheia, com setas, painel de detalhes, busca e ajuda de teclado.

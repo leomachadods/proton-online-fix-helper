@@ -80,7 +80,7 @@ class FullTerminalTest(unittest.TestCase):
                 wait_for('3/3')
                 key(b'\n')
                 wait_for('Preparar e jogar')
-                key(b'j\n')
+                key(b'jj\n')
                 wait_for('Configurar sem abrir')
                 key(b'jj\n')  # Pré-visualização: sem executar o falso Proton.
                 wait_for('Override proposto')

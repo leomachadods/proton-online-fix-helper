@@ -8,6 +8,7 @@ BACKEND = Path(__file__).resolve().parents[1]/'steam-dll-fix.sh'
 
 MAIN_ACTIONS = [
     ('Preparar e jogar\nConfigura o necessário com os arquivos disponíveis e abre o jogo.', 'play'),
+    ('Aplicar correção sem abrir o jogo\nConfigura as DLLs no prefixo. Usa Proton, mas não inicia o jogo.', 'prepare'),
     ('Opções avançadas\nDiagnóstico, instalação manual de arquivos e reversão.', 'advanced'),
     ('Sair', 'exit'),
 ]
@@ -54,12 +55,12 @@ def has_loader(folder):
     return bool(names & {'winmm.dll', 'version.dll', 'winhttp.dll', 'dinput8.dll', 'dxgi.dll'})
 
 
-def play(folder, options):
+def play(folder, options, start_game=True):
     if not has_loader(folder):
         action = choose([
             ('Já tenho um pacote — escolher pasta', 'import'),
-            ('Abrir com os arquivos atuais', 'continue'),
-            ('Voltar', 'back')], 'Antes de jogar',
+            ('Abrir com os arquivos atuais' if start_game else 'Continuar com os arquivos atuais', 'continue'),
+            ('Voltar', 'back')], 'Antes de jogar' if start_game else 'Antes de configurar',
             'Não encontrei um dos carregadores de DLL mais comuns na pasta do jogo. '
             'Isso não prova que o pacote esteja ausente: alguns jogos usam outros arquivos.')
         if action == 'back':
@@ -67,13 +68,14 @@ def play(folder, options):
         if action == 'import' and not import_files(folder):
             return
     status('Preparando o jogo…')
-    code = run_backend('launch', options)
+    code = run_backend('launch' if start_game else 'apply', options)
     if code:
         message('Não foi possível concluir a preparação ou execução. '
               'Veja a mensagem acima. Use Opções avançadas → Ver detalhes da configuração '
-               'se precisar investigar.', 'O jogo não pôde ser iniciado')
+               'se precisar investigar.', 'O jogo não pôde ser iniciado' if start_game else 'A configuração não foi concluída')
     else:
-        status('A execução terminou. Você pode jogar novamente ou sair.')
+        status('A execução terminou. Você pode jogar novamente ou sair.' if start_game else
+               'Configuração concluída. O jogo não foi aberto; você pode iniciá-lo depois pela Steam.')
 
 
 def advanced(folder, prefix, proton, options):
@@ -99,7 +101,7 @@ def advanced(folder, prefix, proton, options):
 def actions_menu(folder, prefix, proton, options):
     while True:
         action = choose(MAIN_ACTIONS, folder.name,
-                        'Tudo pronto para preparar e abrir o jogo.\n'
+                        'Escolha se deseja jogar agora ou apenas configurar para jogar depois.\n'
                         'Use apenas arquivos confiáveis e feche outras instâncias antes de continuar. '
                         'Este assistente não baixa pacotes nem garante a conexão multiplayer.')
         if action == 'exit':
@@ -107,4 +109,4 @@ def actions_menu(folder, prefix, proton, options):
         if action == 'advanced':
             advanced(folder, prefix, proton, options)
         else:
-            play(folder, options)
+            play(folder, options, start_game=action == 'play')
