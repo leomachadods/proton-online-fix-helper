@@ -1,0 +1,48 @@
+Proton Online Fix Helper — CLI Linux/Proton
+
+Para o menu: bash steam-fix-menu.sh
+Para a CLI:  bash steam-dll-fix.sh COMANDO [OPÇÕES]
+
+COMANDOS
+  check      Consulta configurações e registro através do Proton.
+  apply      Configura overrides das DLLs detectadas.
+  remove     Remove overrides; não remove arquivos importados.
+  launch     Aplica o que faltar e executa o jogo.
+  list       Lista prefixos e jogos com DLLs candidatas.
+
+OPÇÕES
+  --path DIR        Pasta do jogo ou caminho de um executável.
+                    O backend ainda escolhe o executável por heurística.
+  --appid N         AppID de um jogo na biblioteca principal do Steam.
+  --compatdata ID   ID do prefixo Proton existente.
+  --proton DIR      Pasta que contém o programa proton.
+  --steam-root DIR  Instalação principal do Steam.
+  --dll a,b,c       Nomes de DLLs sem extensão; substitui a seleção automática.
+  --all-dlls        Ignora heurística de conflito; use com cuidado.
+  --force           Permite overrides de DLLs de núcleo. Pode quebrar o prefixo.
+  --fake-appid N    Alteração explícita de FakeAppId no OnlineFix.ini.
+  --real-appid N    Alteração explícita de RealAppId no OnlineFix.ini.
+                    Não corrigem certificados nem autorização universalmente.
+  --dry-run         Em apply/launch, não grava configurações nem executa Proton.
+  --save            Salva opções para este jogo (apply/launch).
+  --no-config       Ignora opções salvas.
+  --netsock PATH    Integração legada: carrega patch externo via LD_AUDIT.
+                    Desativada por padrão; não baixa o arquivo. Risco com anti-cheat.
+  --no-netsock      Mantém patch de certificados desativado.
+  --timeout N       Parâmetro legado; não há comando de verificação exposto.
+  -h, --help        Esta ajuda.
+  -V, --version     Versão.
+  -- ARGUMENTOS    Argumentos adicionais para launch.
+
+EXEMPLOS (IDs são ilustrativos)
+  bash steam-dll-fix.sh apply --path "/pasta/do/jogo" --compatdata 123 --dry-run
+  bash steam-dll-fix.sh check --path "/pasta/do/jogo" --compatdata 123
+  bash steam-dll-fix.sh launch --appid 123
+
+Prefixo: configuração salva -> atalho Steam -> escolha interativa.
+Na CLI, descoberta de bibliotecas externas/Flatpak é limitada. O menu possui
+descoberta mais ampla, mas também recusa prefixos de bibliotecas externas.
+
+Requer Bash 4+, Linux, Steam e Proton. Menu requer Python 3.9+.
+Leia README.md e docs/TROUBLESHOOTING.md antes de alterar AppIDs.
+Licença: MIT.

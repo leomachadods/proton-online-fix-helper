@@ -1,0 +1,154 @@
+# Proton Online Fix Helper
+
+**Um assistente de terminal para configurar jogos Windows com pacotes OnlineFix no Linux/Proton.**
+
+Escolha o jogo instalado na Steam, confirme o prefixo e o Proton, e configure o
+carregamento das DLLs. Também permite importar um pacote local com backup.
+
+> Projeto comunitário e independente. Não é afiliado à Valve, Steam, LuaTools ou
+> OnlineFix. Não inclui jogos, DLLs, licenças, arquivos Lua ou downloads de fixes.
+
+## Qual problema ele tenta resolver?
+
+Um pacote pode estar na pasta correta e ainda assim não ser carregado pelo Wine.
+Por exemplo, dependendo da configuração, o Proton pode escolher sua implementação
+interna de `winmm.dll` em vez da DLL local do pacote.
+
+O assistente configura um **DLL override** no prefixo selecionado, como
+`winmm=n,b`: tenta a DLL nativa primeiro e permite fallback para a interna.
+
+Isso **não é uma correção universal para multiplayer**. Entrar na lista de salas
+não garante conexão P2P, autenticação, versão compatível ou acesso ao backend do jogo.
+
+## E quando eu uso LuaTools?
+
+O foco inclui instalações em que o pacote foi colocado pela integração do
+**LuaTools com OnlineFix na Steam**. O assistente verifica a instalação local e
+configura o Proton; ele **não modifica o LuaTools nem presume como cada versão
+instala os arquivos**.
+
+Mesmo que o LuaTools tenha colocado os arquivos, ainda pode faltar o override no
+prefixo usado para executar o jogo. A importação de arquivos e a configuração do
+Proton são etapas distintas. Veja [LuaTools e diagnóstico](docs/LUATOOLS.md).
+
+## Requisitos
+
+- Linux com Steam e Proton instalados.
+- Python **3.9+** e Bash **4+** para o menu.
+- Ferramentas usuais do Linux: `awk`, `sed`, `grep`, `find`, `stat` e `mktemp`.
+- O jogo deve ter sido aberto ao menos uma vez com Proton para criar o prefixo.
+- Um pacote específico para a versão do jogo, obtido de uma origem confiável,
+  caso seja necessária a importação.
+
+Não execute como root ou com `sudo`. Windows e macOS não são suportados.
+O Steam Flatpak é detectado pelo menu, mas permissões do sandbox podem exigir
+ajustes manuais; não há garantia de compatibilidade.
+
+## Começar em 3 passos
+
+1. Baixe e extraia o ZIP deste repositório, ou clone-o:
+
+   ```bash
+   git clone https://github.com/leomachadods/proton-online-fix-helper.git
+   cd proton-online-fix-helper
+   ```
+
+2. Abra o menu:
+
+   ```bash
+   bash steam-fix-menu.sh
+   ```
+
+3. Escolha **jogo → prefixo → Proton**. Depois:
+   - **Já tem o pacote?** Pré-visualize e aplique os overrides.
+   - **Não tem o pacote?** Escolha importar uma **pasta local já extraída**.
+     Confira os arquivos e confirme a cópia. Depois aplique os overrides.
+   - Abra o jogo e teste com seu amigo.
+
+Na tela de prefixos, a correspondência de **AppID + biblioteca** aparece primeiro
+como **RECOMENDADO**. Cada opção mostra jogo, ID, caminho e Proton registrado.
+Na terceira tela, o Proton registrado também aparece primeiro, quando instalado.
+O programa não escolhe por você: confirme o número para continuar.
+
+**Feche o jogo antes de importar arquivos ou alterar configurações.**
+Mantenha toda a pasta do projeto junta: os `.sh` dependem de `lib/` e `steamfix/`.
+
+## O que cada opção faz
+
+| Opção | Comportamento |
+|---|---|
+| Diagnosticar | Consulta o registro usando Proton; pode inicializar serviços do Wine. |
+| Importar pacote | Copia arquivos locais, com confirmação, backup e tentativa de rollback. |
+| Pré-visualizar | Mostra overrides propostos, sem executar Proton nem abrir jogos. |
+| Aplicar | Configura os overrides para as DLLs detectadas. |
+| Remover | Remove os overrides das DLLs selecionadas; não desfaz importações. |
+| Abrir | Aplica o que faltar e executa o jogo com o prefixo escolhido. |
+
+## Segurança e backup
+
+DLLs são programas e executam com suas permissões. O projeto não verifica sua
+autenticidade e não baixa nem executa pacotes automaticamente durante a importação.
+Pacotes com links simbólicos ou arquivos especiais são recusados.
+
+Arquivos substituídos ficam em `.steam-fix-backup-DATA/` dentro do jogo. Para
+restaurar, feche o jogo e copie os originais de volta. Os arquivos novos listados
+em `arquivos-copiados.txt` precisam ser avaliados separadamente: **remover overrides
+não remove os arquivos importados**. Guarde o backup até confirmar o resultado.
+
+Não use patches de memória em jogos com anti-cheat. O menu desativa a integração
+legada de patch de certificados. A CLI também a deixa desligada por padrão.
+
+## CLI (opcional)
+
+```bash
+# Ajuda
+bash steam-dll-fix.sh --help
+
+# Pré-visualizar sem executar Proton
+bash steam-dll-fix.sh apply --path "/pasta/do/jogo" --compatdata 123 --dry-run
+
+# Aplicar e abrir um jogo da biblioteca principal
+bash steam-dll-fix.sh apply --appid 123
+bash steam-dll-fix.sh launch --appid 123
+```
+
+Os números são exemplos. Não copie o ID do prefixo de outra pessoa.
+Consulte [o guia de diagnóstico](docs/TROUBLESHOOTING.md) antes de alterar AppIDs.
+
+## Limitações conhecidas
+
+- O menu descobre jogos em várias bibliotecas, mas ainda **recusa prefixos em
+  bibliotecas externas**: o backend pressupõe `compatdata` na raiz principal.
+- A CLI tem descoberta mais limitada que o menu, especialmente no Steam Flatpak.
+- Atalhos não-Steam podem ser usados no menu informando o caminho manualmente.
+- Seleção automática de DLLs e executável é uma heurística; jogos com vários
+  executáveis ou loaders não convencionais podem precisar de configuração manual.
+- A verificação legada por timeout não é oferecida no menu; seu código ainda usa
+  encerramento por nome e não deve ser usado com outra instância do jogo aberta.
+- Não há garantia de funcionamento com toda versão de Steam, Proton ou pacote.
+- Não é feita validação de licença, desativação de anti-cheat nem correção do
+  servidor do jogo. Use apenas jogos e arquivos que você tem direito de utilizar.
+
+## Organização e testes
+
+```text
+steam-fix-menu.sh       entrada do menu
+menu.py                entrada Python
+steamfix/              interface, descoberta e importação local
+steam-dll-fix.sh        entrada da CLI
+lib/                   módulos Bash do backend
+tests/                 testes isolados
+docs/                  diagnóstico e contexto do LuaTools
+```
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+Os testes usam arquivos temporários e Proton simulado; não alteram seus jogos.
+Veja [CONTRIBUTING.md](CONTRIBUTING.md) para contribuir e
+[PUBLISHING.md](docs/PUBLISHING.md) para publicar sua cópia no GitHub.
+
+## Licença
+
+[MIT](LICENSE). Pacotes de terceiros têm suas próprias licenças e não são incluídos.

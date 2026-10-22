@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.log
+*.dll
+*.so
+*.exe
+*.zip
+*.rar
+*.7z
+*.bak
+.steam-fix-backup-*/
+games.conf
+.env
