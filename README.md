@@ -59,11 +59,13 @@ ajustes manuais; não há garantia de compatibilidade.
    bash steam-fix-menu.sh
    ```
 
-3. Escolha **jogo → prefixo → Proton**. Depois:
-   - **Já tem o pacote?** Pré-visualize e aplique os overrides.
-   - **Não tem o pacote?** Escolha importar uma **pasta local já extraída**.
-     Confira os arquivos e confirme a cópia. Depois aplique os overrides.
-   - Abra o jogo e teste com seu amigo.
+3. Escolha **jogo → prefixo → Proton** e selecione **Preparar e jogar**.
+   O assistente configura o que faltar e abre o jogo; você não precisa escolher
+   entre aplicar overrides e executar.
+
+   Se um carregador comum não for encontrado, o assistente oferece escolher uma
+   **pasta local com o pacote já extraído**, abrir com os arquivos atuais ou voltar.
+   Essa detecção é uma heurística, não uma verificação completa do pacote.
 
 Na tela de prefixos, a correspondência de **AppID + biblioteca** aparece primeiro
 como **RECOMENDADO**. Cada opção mostra jogo, ID, caminho e Proton registrado.
@@ -73,16 +75,26 @@ O programa não escolhe por você: confirme o número para continuar.
 **Feche o jogo antes de importar arquivos ou alterar configurações.**
 Mantenha toda a pasta do projeto junta: os `.sh` dependem de `lib/` e `steamfix/`.
 
-## O que cada opção faz
+## Menu simples
+
+```text
+[1] Preparar e jogar
+[2] Opções avançadas
+[3] Sair
+```
+
+Para uso normal, escolha **Preparar e jogar**. As opções técnicas ficam em
+**Opções avançadas**, que tem um botão **Voltar** para retornar ao menu principal.
+
+## O que há nas opções avançadas
 
 | Opção | Comportamento |
 |---|---|
-| Diagnosticar | Consulta o registro usando Proton; pode inicializar serviços do Wine. |
-| Importar pacote | Copia arquivos locais, com confirmação, backup e tentativa de rollback. |
-| Pré-visualizar | Mostra overrides propostos, sem executar Proton nem abrir jogos. |
-| Aplicar | Configura os overrides para as DLLs detectadas. |
-| Remover | Remove os overrides das DLLs selecionadas; não desfaz importações. |
-| Abrir | Aplica o que faltar e executa o jogo com o prefixo escolhido. |
+| Ver detalhes da configuração | Consulta o registro usando Proton; pode inicializar serviços do Wine. |
+| Instalar arquivos de um pacote local | Copia arquivos locais, com confirmação, backup e tentativa de rollback. |
+| Ver alterações propostas | Mostra overrides propostos, sem executar Proton nem abrir jogos. |
+| Configurar sem abrir o jogo | Configura os overrides para as DLLs detectadas. |
+| Desfazer configuração de DLLs | Remove os overrides das DLLs selecionadas; não desfaz importações. |
 
 ## Segurança e backup
 

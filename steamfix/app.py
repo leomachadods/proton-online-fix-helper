@@ -1,10 +1,10 @@
 """Orquestra o menu; chamadas ao backend usam argv, nunca shell=True."""
 import os
 from pathlib import Path
-import subprocess
 
-from . import discovery, packages
+from . import discovery
 from .ui import ask, choose, location
+from .workflow import actions_menu
 
 BACKEND = Path(__file__).resolve().parents[1]/'steam-dll-fix.sh'
 
@@ -58,36 +58,4 @@ def main():
         raise ValueError('Proton inválido ou sem permissão de execução.')
     options = ['--path', str(folder), '--compatdata', prefix.name,
                '--steam-root', str(root), '--proton', str(proton), '--no-config', '--no-netsock']
-    print('\nFeche o jogo antes de configurar. Não use sudo.', flush=True)
-    while True:
-        action = choose([
-            ('Diagnosticar configuração', 'check'),
-            ('Importar pacote local extraído (com backup)', 'import'),
-            ('Pré-visualizar overrides sem executar Proton', 'preview'),
-            ('Aplicar overrides das DLLs existentes', 'apply'),
-            ('Remover overrides', 'remove'),
-            ('Abrir jogo (sem patch de certificados)', 'launch'),
-            ('Sair', 'exit')], f'{folder.name} | Prefixo {prefix.name}')
-        if action == 'exit':
-            return
-        if action == 'import':
-            source = location(ask('Pasta do pacote específico para este jogo: '))
-            try:
-                files = packages.plan(source, folder)
-            except ValueError as exc:
-                print(exc, flush=True)
-                continue
-            for p in files:
-                print('  ' + str(p.relative_to(source)), flush=True)
-            print('DLLs executam código com suas permissões. A origem não é verificada.', flush=True)
-            if ask('Digite COPIAR para confirmar: ') == 'COPIAR':
-                print(f'Importado. Backup: {packages.import_package(source, folder)}', flush=True)
-            continue
-        if action in ('apply', 'remove', 'launch', 'check'):
-            print('Esta operação executa Proton. Confie nas DLLs presentes no jogo.', flush=True)
-            if ask('Continuar? [s/N]: ').lower() != 's':
-                continue
-        command = 'apply' if action == 'preview' else action
-        extra = ['--dry-run'] if action == 'preview' else []
-        code = subprocess.call(['bash', str(BACKEND), command, *options, *extra])
-        print(f'Operação encerrada (código {code}).', flush=True)
+    actions_menu(folder, prefix, proton, options)
