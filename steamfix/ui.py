@@ -4,8 +4,37 @@ import sys
 import shutil
 import textwrap
 
+FRONTEND = None
+
+
+class GoBack(Exception):
+    """Volta uma etapa do assistente sem executar ações."""
+
+
+def message(text, title='Informação'):
+    if FRONTEND is not None:
+        FRONTEND.text(title, text)
+    else:
+        print(text, flush=True)
+
+
+def status(text):
+    if FRONTEND is not None:
+        FRONTEND.last_status = text
+    else:
+        print(text, flush=True)
+
+
+def run_command(argv):
+    if FRONTEND is not None:
+        return FRONTEND.run_process(argv)
+    import subprocess
+    return subprocess.call(argv)
+
 
 def ask(text):
+    if FRONTEND is not None:
+        return FRONTEND.prompt(text)
     if sys.stdin.isatty():
         try:
             return input(text).strip()
@@ -27,7 +56,9 @@ def ask(text):
 
 def choose(items, title, description=''):
     if not items:
-        raise SystemExit('Nenhuma opção disponível. Abra o jogo uma vez pelo Steam.')
+        raise ValueError('Nenhuma opção disponível. Abra o jogo uma vez pelo Steam.')
+    if FRONTEND is not None:
+        return FRONTEND.choose(items, title, description)
     width = min(100, max(32, shutil.get_terminal_size((80, 24)).columns))
     print('\n' + '─' * width, flush=True)
     print(title, flush=True)

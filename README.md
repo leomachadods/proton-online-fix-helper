@@ -1,6 +1,6 @@
 # Proton Online Fix Helper
 
-**Um assistente de terminal para configurar jogos Windows com pacotes OnlineFix no Linux/Proton.**
+**Um assistente TUI para configurar jogos Windows com pacotes OnlineFix no Linux/Proton.**
 
 Escolha o jogo instalado na Steam, confirme o prefixo e o Proton, e configure o
 carregamento das DLLs. Também permite importar um pacote local com backup.
@@ -86,6 +86,48 @@ Mantenha toda a pasta do projeto junta: os `.sh` dependem de `lib/` e `steamfix/
 Para uso normal, escolha **Preparar e jogar**. As opções técnicas ficam em
 **Opções avançadas**, que tem um botão **Voltar** para retornar ao menu principal.
 
+## Navegação na TUI
+
+A interface abre em tela cheia. A opção selecionada fica destacada; os detalhes
+aparecem à direita. Em terminais mais estreitos, os detalhes ficam abaixo da
+lista. A primeira opção de prefixo continua sendo a recomendada para o jogo,
+quando houver uma correspondência de AppID e biblioteca.
+
+| Tecla | Ação |
+|---|---|
+| **↑ / ↓** | Selecionar uma opção. Também aceita `j` / `k`. |
+| **Enter** | Confirmar a opção destacada. |
+| **Esc** | Voltar uma etapa; no menu principal, sair. |
+| **/** | Buscar por nome, AppID ou caminho. Esc limpa a busca. |
+| **Tab** | Alternar entre seleção e rolagem dos detalhes. |
+| **PgUp / PgDn** | Rolar uma página na lista ou nos detalhes. |
+| **Home / End** | Primeira ou última opção. |
+| **?** | Abrir a ajuda de teclado. |
+
+Nos campos de texto, use ←/→ para mover o cursor e Ctrl+U para limpar. Caminhos
+com espaços são aceitos sem aspas. Nenhuma opção é executada apenas por movê-la:
+é necessário confirmar com Enter.
+
+A TUI usa `curses`, que acompanha o Python na maioria das distribuições Linux.
+Requer um terminal de pelo menos **44 colunas × 18 linhas**; para duas colunas,
+prefira **100 colunas ou mais**. Se curses não estiver disponível ou seu terminal
+não for compatível, o menu numerado continua acessível:
+
+```bash
+bash steam-fix-menu.sh --plain
+```
+
+Durante operações, a TUI mostra o andamento e salva a saída em:
+
+```text
+~/.local/state/proton-online-fix-helper/logs/
+```
+
+Se `XDG_STATE_HOME` estiver definido, ele substitui `~/.local/state`. Logs podem
+conter informações pessoais: revise-os antes de compartilhar. O painel de
+resultado permite rolagem. Ao abrir um jogo, aguarde fechá-lo para retornar.
+Ctrl+C sai da interface, mas **não encerra processos Proton já iniciados**.
+
 ## O que há nas opções avançadas
 
 | Opção | Comportamento |
@@ -146,7 +188,7 @@ Consulte [o guia de diagnóstico](docs/TROUBLESHOOTING.md) antes de alterar AppI
 ```text
 steam-fix-menu.sh       entrada do menu
 menu.py                entrada Python
-steamfix/              interface, descoberta e importação local
+steamfix/              TUI curses, modo texto, descoberta e importação local
 steam-dll-fix.sh        entrada da CLI
 lib/                   módulos Bash do backend
 tests/                 testes isolados

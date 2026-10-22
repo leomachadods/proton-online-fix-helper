@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-VERSION="1.0.0"
+VERSION="1.1.0"
 PROGNAME="${0##*/}"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/steam-dll-fix"
 CONFIG_FILE="$CONFIG_DIR/games.conf"

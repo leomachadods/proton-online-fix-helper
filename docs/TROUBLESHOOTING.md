@@ -1,5 +1,22 @@
 # Guia rápido de diagnóstico
 
+## A TUI não abre ou fica apertada
+
+Abra em um terminal interativo, sem redirecionar stdin/stdout. Aumente a janela
+para pelo menos 44 × 18; a partir de 100 colunas, opções e detalhes ficam lado a
+lado. Se aparecer erro de `curses` ou terminal incompatível, tente:
+
+```bash
+bash steam-fix-menu.sh --plain
+```
+
+Use `?` dentro da TUI para consultar as teclas. `Esc` volta uma etapa, sem
+configurar nada. Para rolar detalhes longos, pressione Tab e depois ↑/↓.
+
+O andamento das operações e seus resultados ficam também em
+`~/.local/state/proton-online-fix-helper/logs/` (ou em `XDG_STATE_HOME`). O caminho
+do log é exibido no resultado. Esses arquivos não devem ser publicados sem revisão.
+
 ## O jogo não aparece
 
 Use **Informar caminho de outro jogo/executável**. Confira que o jogo está

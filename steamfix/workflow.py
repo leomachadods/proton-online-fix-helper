@@ -1,9 +1,8 @@
 """Fluxo simples para jogar; ferramentas técnicas ficam no submenu avançado."""
 from pathlib import Path
-import subprocess
 
 from . import packages
-from .ui import ask, choose, location
+from .ui import ask, choose, location, message, status, run_command
 
 BACKEND = Path(__file__).resolve().parents[1]/'steam-dll-fix.sh'
 
@@ -24,12 +23,12 @@ ADVANCED_ACTIONS = [
 
 
 def run_backend(command, options):
-    return subprocess.call(['bash', str(BACKEND), command, *options])
+    return run_command(['bash', str(BACKEND), command, *options])
 
 
 def import_files(folder):
-    print('Use um pacote específico para este jogo, de uma origem em que você confia.\n'
-          'Não baixamos arquivos automaticamente. Extraia o pacote antes de continuar.', flush=True)
+    message('Use um pacote específico para este jogo, de uma origem em que você confia.\n'
+            'Não baixamos arquivos automaticamente. Extraia o pacote antes de continuar.', 'Instalar pacote local')
     value = ask('Pasta do pacote (Enter para voltar): ')
     if not value:
         return False
@@ -37,17 +36,15 @@ def import_files(folder):
     try:
         files = packages.plan(source, folder)
     except ValueError as exc:
-        print(f'Não foi possível importar: {exc}', flush=True)
+        message(f'Não foi possível importar: {exc}', 'Importação cancelada')
         return False
-    print('\nArquivos que serão copiados:', flush=True)
-    for p in files:
-        print('  ' + str(p.relative_to(source)), flush=True)
-    print('Esses arquivos podem executar código no seu computador.\n'
-          'Arquivos substituídos serão guardados em backup.', flush=True)
+    message('Arquivos que serão copiados:\n' + '\n'.join(str(p.relative_to(source)) for p in files) +
+            '\n\nEsses arquivos podem executar código no seu computador.\n'
+            'Arquivos substituídos serão guardados em backup.', 'Revisar pacote')
     if ask('Digite COPIAR para instalar, ou Enter para voltar: ') != 'COPIAR':
         return False
     backup = packages.import_package(source, folder)
-    print(f'Arquivos instalados. Backup: {backup}', flush=True)
+    message(f'Arquivos instalados. Backup: {backup}', 'Pacote instalado')
     return True
 
 
@@ -69,14 +66,14 @@ def play(folder, options):
             return
         if action == 'import' and not import_files(folder):
             return
-    print('\nPreparando o jogo…', flush=True)
+    status('Preparando o jogo…')
     code = run_backend('launch', options)
     if code:
-        print('\nNão foi possível concluir a preparação ou execução. '
+        message('Não foi possível concluir a preparação ou execução. '
               'Veja a mensagem acima. Use Opções avançadas → Ver detalhes da configuração '
-              'se precisar investigar.', flush=True)
+               'se precisar investigar.', 'O jogo não pôde ser iniciado')
     else:
-        print('\nA execução terminou. Você pode jogar novamente ou sair.', flush=True)
+        status('A execução terminou. Você pode jogar novamente ou sair.')
 
 
 def advanced(folder, prefix, proton, options):
@@ -90,13 +87,13 @@ def advanced(folder, prefix, proton, options):
             import_files(folder)
             continue
         if action in ('apply', 'remove', 'check'):
-            print('Esta ação executa Proton. As DLLs presentes devem ser confiáveis.', flush=True)
+            message('Esta ação executa Proton. As DLLs presentes devem ser confiáveis.', 'Confirmação')
             if ask('Continuar? [s/N]: ').lower() != 's':
                 continue
         command = 'apply' if action == 'preview' else action
         extra = ['--dry-run'] if action == 'preview' else []
         code = run_backend(command, options + extra)
-        print('Concluído.' if code == 0 else 'A operação falhou. Veja a mensagem acima.', flush=True)
+        status('Concluído.' if code == 0 else 'A operação falhou. Consulte o log mostrado no resultado.')
 
 
 def actions_menu(folder, prefix, proton, options):
