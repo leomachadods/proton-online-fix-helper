@@ -53,7 +53,7 @@ config_save && config_save
         env = {**os.environ, 'MARKER': str(self.base/'marker'), 'HOME': str(self.base)}
         result = subprocess.run(['bash', str(ROOT/'steam-dll-fix.sh'), command,
             '--path', str(folder), '--compatdata', '123', '--steam-root', str(root),
-            '--proton', str(proton), '--no-config', '--no-netsock', *extra],
+            '--proton', str(proton), '--no-config', *extra],
             capture_output=True, text=True, env=env)
         return result
 
@@ -66,6 +66,17 @@ config_save && config_save
         result = self.cli('apply', '--dry-run')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.base/'marker').exists())
+
+    def test_winmm_fix_still_sets_native_then_builtin(self):
+        code = f'''source "{ROOT}/lib/runtime.sh"
+reg_set() {{ printf 'SET:%s:%s:%s:%s\\n' "$1" "$2" "$3" "$4"; }}
+reg_load() {{ return 0; }}
+reg_get() {{ printf 'n,b'; }}
+ok() {{ :; }}
+apply_dlls 123 'HKCU\\Software\\Wine\\DllOverrides' apply winmm
+'''
+        result = subprocess.run(['bash', '-uc', code], capture_output=True, text=True, check=True)
+        self.assertIn('SET:123:HKCU\\Software\\Wine\\DllOverrides:winmm:n,b', result.stdout)
 
     def test_launch_returns_failure_when_apply_fails(self):
         result = self.cli('launch')

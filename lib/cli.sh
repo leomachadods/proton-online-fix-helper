@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 COMMAND=""; GAME_DIR=""; APPID=""; COMPAT_ID=""; PROTON=""
 WANT_DLLS=""; FAKE_APPID=""; REAL_APPID=""; TIMEOUT=45
-NETSOCK=""; NO_NETSOCK=1
 DRY=0; FORCE=0; ALL_DLLS=0; SAVE=0; USE_CONFIG=1
 REG_KEY='HKCU\Software\Wine\DllOverrides'
 declare -a EXTRA_ARGS=()
@@ -21,8 +20,6 @@ while [[ $# -gt 0 ]]; do
         --fake-appid)     FAKE_APPID="${2:?--fake-appid precisa de um valor}"; shift ;;
         --real-appid)     REAL_APPID="${2:?--real-appid precisa de um valor}"; shift ;;
         --timeout)        TIMEOUT="${2:?--timeout precisa de um valor}"; shift ;;
-        --netsock)        NETSOCK="${2:?--netsock precisa de um caminho}"; NO_NETSOCK=0; shift ;;
-        --no-netsock)     NO_NETSOCK=1 ;;
         --dry-run)        DRY=1 ;;
         --force)          FORCE=1 ;;
         --save)           SAVE=1 ;;

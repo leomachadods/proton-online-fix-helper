@@ -12,7 +12,7 @@ class WorkflowTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)
-        self.options = ['--no-config', '--no-netsock']
+        self.options = ['--no-config']
 
     def test_main_has_separate_prepare_and_play_choices(self):
         self.assertEqual([v for _, v in workflow.MAIN_ACTIONS], ['play', 'prepare', 'advanced', 'exit'])

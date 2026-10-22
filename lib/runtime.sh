@@ -74,17 +74,11 @@ launch_game() {  # <id> <dir> [args...]
     [[ -n "$exe" ]] || { err "não encontrei um .exe para rodar"; return 1; }
     step "abrindo $(basename "$exe")"
 
-    local net; net="$(netsock_path || true)"
-    if [[ -n "$net" ]]; then
-        info "  ${C_CYAN}patch de cert aplicado (LD_AUDIT):${C_RESET} $net"
-    fi
-
     local -a envs=(
         "STEAM_COMPAT_CLIENT_INSTALL_PATH=$(steam_root)"
         "STEAM_COMPAT_DATA_PATH=$(compat_dir)/$id"
         "STEAM_COMPAT_INSTALL_PATH=$(steam_root)"
     )
-    [[ -n "$net" ]] && envs+=("LD_AUDIT=$net")
 
     ( cd "$dir" && env "${envs[@]}" "$PROTON/proton" run "$exe" "$@" )
 }

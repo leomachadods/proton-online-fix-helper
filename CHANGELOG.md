@@ -2,6 +2,7 @@
 
 ## Próxima versão
 
+- Removida a integração com patches de certificado; o projeto não configura LD_AUDIT.
 - Ação principal para aplicar a configuração sem iniciar o jogo.
 - Documentação esclarece que overrides não redirecionam servidores automaticamente.
 

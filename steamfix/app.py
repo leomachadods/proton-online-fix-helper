@@ -94,5 +94,5 @@ def main():
             continue
         stage += 1
     options = ['--path', str(folder), '--compatdata', prefix.name,
-               '--steam-root', str(root), '--proton', str(proton), '--no-config', '--no-netsock']
+               '--steam-root', str(root), '--proton', str(proton), '--no-config']
     actions_menu(folder, prefix, proton, options)

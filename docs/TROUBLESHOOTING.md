@@ -54,8 +54,9 @@ Indica uma incompatibilidade entre a autorização do certificado e o AppID usad
 na conexão. **Não significa simplesmente que falta carregar uma DLL.**
 
 Não troque IDs ao acaso. A correção depende da licença, do pacote e da sessão
-dos dois jogadores. O menu não desativa essa validação. A integração legada de
-patch não é baixada, verificada ou recomendada automaticamente pelo projeto.
+dos dois jogadores. O projeto não desativa essa validação nem inclui integração
+com patches de certificado. O override de DLLs não resolve necessariamente esse
+erro de conexão; ele apenas permite que o pacote local seja carregado.
 
 ## `Unsupported SteamUtils version`
 

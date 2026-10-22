@@ -159,8 +159,11 @@ restaurar, feche o jogo e copie os originais de volta. Os arquivos novos listado
 em `arquivos-copiados.txt` precisam ser avaliados separadamente: **remover overrides
 não remove os arquivos importados**. Guarde o backup até confirmar o resultado.
 
-Não use patches de memória em jogos com anti-cheat. O menu desativa a integração
-legada de patch de certificados. A CLI também a deixa desligada por padrão.
+O projeto não integra patches de memória nem contorna verificações de certificado.
+O ajuste principal é configurar o carregamento das DLLs locais via overrides no
+prefixo Proton. Ele não baixa pacotes nem altera AppIDs automaticamente.
+Configurações externas, como opções de lançamento já salvas na Steam, não são
+removidas ou modificadas pelo assistente.
 
 ## CLI (opcional)
 
