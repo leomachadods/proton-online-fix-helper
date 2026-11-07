@@ -195,6 +195,51 @@ class NetsockTests(unittest.TestCase):
         self.assertEqual(info['processes'][0]['pid'], '123')
         self.assertEqual(info['processes'][0]['ld_audit'], '/tmp/netsock.so')
 
+    def test_export_bundle_creates_portable_installer(self):
+        destination = self.base/'bundle'
+        result = netsock.export_bundle(destination, '4210580', patch=self.patch)
+        self.assertEqual(result['path'], destination)
+        for name in ('netsock.so', 'netsock.py', 'instalar.sh', 'LEIA-ME.txt', 'SHA256SUMS'):
+            self.assertTrue((destination/name).is_file(), name)
+        self.assertEqual((destination/'netsock.so').read_bytes(), self.patch.read_bytes())
+        self.assertTrue(os.access(destination/'instalar.sh', os.X_OK))
+        installer = (destination/'instalar.sh').read_text()
+        self.assertIn('APPID="4210580"', installer)
+        self.assertIn('netsock.py', installer)
+        self.assertNotIn('__APPID__', installer)
+        self.assertIn(result['sha256'], (destination/'SHA256SUMS').read_text())
+        self.assertIn('4210580', (destination/'LEIA-ME.txt').read_text())
+        self.assertNotIn('__APPID__', (destination/'LEIA-ME.txt').read_text())
+
+    def test_export_bundle_refuses_non_empty_destination_without_force(self):
+        destination = self.base/'bundle'
+        destination.mkdir()
+        (destination/'existente.txt').write_text('x')
+        with self.assertRaises(ValueError):
+            netsock.export_bundle(destination, '4210580', patch=self.patch)
+        result = netsock.export_bundle(destination, '4210580', patch=self.patch, force=True)
+        self.assertTrue(result['installer'].is_file())
+        self.assertEqual((destination/'existente.txt').read_text(), 'x')
+
+    def test_export_bundle_refuses_symlink_destination(self):
+        target = self.base/'real-dir'
+        target.mkdir()
+        link = self.base/'link-dir'
+        link.symlink_to(target)
+        with self.assertRaises(ValueError):
+            netsock.export_bundle(link, '4210580', patch=self.patch)
+
+    def test_cli_export(self):
+        destination = self.base/'cli-bundle'
+        env = {**os.environ, 'HOME': str(self.base)}
+        result = subprocess.run(
+            ['bash', str(ROOT/'steam-dll-fix.sh'), 'netsock', '--appid', '4210580',
+             '--patch', str(self.patch), '--export', str(destination)],
+            capture_output=True, text=True, env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((destination/'instalar.sh').is_file())
+        self.assertIn('Pacote criado', result.stdout)
+
     def test_cli_status_and_apply(self):
         env = {**os.environ, 'HOME': str(self.base)}
         status = subprocess.run(

@@ -2,7 +2,7 @@
 COMMAND=""; GAME_DIR=""; APPID=""; COMPAT_ID=""; PROTON=""
 WANT_DLLS=""; FAKE_APPID=""; REAL_APPID=""; TIMEOUT=45
 DRY=0; FORCE=0; ALL_DLLS=0; SAVE=0; USE_CONFIG=1
-NETSOCK_ACTION="status"; NETSOCK_PATCH=""; NETSOCK_USERDATA=""; NETSOCK_OPT=0
+NETSOCK_ACTION="status"; NETSOCK_PATCH=""; NETSOCK_USERDATA=""; NETSOCK_EXPORT=""; NETSOCK_OPT=0
 REG_KEY='HKCU\Software\Wine\DllOverrides'
 declare -a EXTRA_ARGS=()
 
@@ -23,6 +23,7 @@ while [[ $# -gt 0 ]]; do
         --status)         NETSOCK_ACTION="status"; NETSOCK_OPT=1 ;;
         --apply)          NETSOCK_ACTION="apply"; NETSOCK_OPT=1 ;;
         --remove)         NETSOCK_ACTION="remove"; NETSOCK_OPT=1 ;;
+        --export)         NETSOCK_EXPORT="${2:?--export precisa de uma pasta}"; NETSOCK_ACTION="export"; NETSOCK_OPT=1; shift ;;
         --fake-appid)     FAKE_APPID="${2:?--fake-appid precisa de um valor}"; shift ;;
         --real-appid)     REAL_APPID="${2:?--real-appid precisa de um valor}"; shift ;;
         --timeout)        TIMEOUT="${2:?--timeout precisa de um valor}"; shift ;;
@@ -63,12 +64,19 @@ if [[ "$COMMAND" == "list" ]]; then
 fi
 
 if [[ "$COMMAND" == "netsock" ]]; then
-    steam_root >/dev/null || die "não achei o Steam (use --steam-root)"
     command -v python3 >/dev/null || die "netsock requer Python 3.9+"
-    ns_args=( "$NETSOCK_ACTION" --steam-root "$(steam_root)" --appid "$APPID" )
+    if [[ "$NETSOCK_ACTION" == "export" ]]; then
+        [[ -n "$NETSOCK_EXPORT" ]] || die "netsock --export requer uma pasta de destino"
+        [[ -z "$NETSOCK_USERDATA" ]] || die "--userdata não vale para export"
+        (( DRY == 0 )) || die "--dry-run não vale para export"
+        ns_args=( export --appid "$APPID" --dest "$NETSOCK_EXPORT" )
+    else
+        steam_root >/dev/null || die "não achei o Steam (use --steam-root)"
+        ns_args=( "$NETSOCK_ACTION" --steam-root "$(steam_root)" --appid "$APPID" )
+        [[ -n "$NETSOCK_USERDATA" ]] && ns_args+=( --userdata "$NETSOCK_USERDATA" )
+        (( DRY )) && ns_args+=( --dry-run )
+    fi
     [[ -n "$NETSOCK_PATCH" ]] && ns_args+=( --patch "$NETSOCK_PATCH" )
-    [[ -n "$NETSOCK_USERDATA" ]] && ns_args+=( --userdata "$NETSOCK_USERDATA" )
-    (( DRY )) && ns_args+=( --dry-run )
     (( FORCE )) && ns_args+=( --force )
     PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}" \
         python3 -m steamfix.netsock "${ns_args[@]}"

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0
+
+- Ação avançada **Exportar patch para outro PC** e comando
+  `netsock --export DIR`: copiam o `netsock.so` já instalado, um instalador
+  autônomo, instruções e checksum para levar o patch a outra máquina.
+- O pacote exportado não baixa nada, exige Steam fechada no destino e cria
+  backup de `localconfig.vdf`; o projeto continua sem validar o patch.
+- Documentação reforça que o patch só é necessário no lado que recebe o erro
+  de certificado e que ele não garante conexão online.
+
 ## 1.2.0
 
 - Ação avançada opt-in **Patch de rede (SteamSockets)**: verifica e configura o

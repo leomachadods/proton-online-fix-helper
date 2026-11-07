@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -692,6 +693,107 @@ def remove(root, appid, patch=None, userdata=None, force=False, dry_run=False):
     return result
 
 
+INSTALLER_TEMPLATE = '''#!/usr/bin/env bash
+# Instalador do patch de rede SLSsteam para o AppID __APPID__.
+# Gerado pelo Proton Online Fix Helper. O netsock.so é um arquivo de terceiros.
+set -euo pipefail
+DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+APPID="__APPID__"
+ROOT="${STEAM_ROOT:-$HOME/.local/share/Steam}"
+if [[ ! -d "$ROOT/steamapps" ]]; then
+    for candidate in "$HOME/.steam/steam" "$HOME/.var/app/com.valvesoftware.Steam/.local/share/Steam"; do
+        if [[ -d "$candidate/steamapps" ]]; then ROOT="$candidate"; break; fi
+    done
+fi
+if [[ ! -d "$ROOT/steamapps" ]]; then
+    echo "Steam não encontrado. Defina STEAM_ROOT." >&2
+    exit 1
+fi
+command -v python3 >/dev/null 2>&1 || { echo "Python 3.9+ é necessário." >&2; exit 1; }
+if command -v sha256sum >/dev/null 2>&1 && [[ -f "$DIR/SHA256SUMS" ]]; then
+    (cd "$DIR" && sha256sum -c SHA256SUMS)
+fi
+echo "Feche a Steam completamente antes de continuar."
+if [[ -t 0 ]]; then
+    read -r -p "Pressione Enter quando a Steam estiver fechada... " _
+fi
+python3 "$DIR/netsock.py" status --steam-root "$ROOT" --appid "$APPID" --patch "$DIR/netsock.so" || true
+python3 "$DIR/netsock.py" apply --steam-root "$ROOT" --appid "$APPID" --patch "$DIR/netsock.so"
+echo
+echo "Abra a Steam, inicie o jogo pela Steam e teste a conexão."
+'''
+
+
+README_TEMPLATE = '''Patch de rede SLSsteam (netsock) — AppID __APPID__
+
+Este pacote foi gerado pelo Proton Online Fix Helper a partir de um arquivo
+netsock.so já instalado no PC de origem. O projeto não baixa nem valida esse
+arquivo; ele é de terceiros. Use apenas se confiar na origem e respeite a
+licença aplicável.
+
+Requisitos
+- Linux com Steam e Proton.
+- Python 3.9 ou superior.
+- O jogo deve ter sido aberto ao menos uma vez com Proton.
+
+Como instalar
+1. Feche a Steam completamente.
+2. Abra um terminal nesta pasta e execute:
+       bash instalar.sh
+3. O instalador cria um backup de localconfig.vdf e adiciona o LD_AUDIT às
+   opções de inicialização da Steam para o AppID __APPID__.
+4. Abra a Steam e inicie o jogo pela Steam.
+
+Conferir depois
+    python3 netsock.py status --steam-root "$HOME/.local/share/Steam" --appid __APPID__ --patch "$PWD/netsock.so"
+
+Remover
+    python3 netsock.py remove --steam-root "$HOME/.local/share/Steam" --appid __APPID__ --patch "$PWD/netsock.so"
+
+Observações
+- A opção só afeta lançamentos feitos pela Steam.
+- Os dois jogadores precisam de versão do jogo, pacote e AppID falso
+  compatíveis. O patch não garante conexão online.
+- Se a Steam estiver aberta, o instalador se recusa a gravar.
+- O backup fica como localconfig.vdf.bak-DATA dentro da pasta de configuração
+  da conta Steam usada.
+'''
+
+
+def export_bundle(destination, appid, patch=None, force=False):
+    """Copia o patch e um instalador autônomo para levar a outro PC."""
+    appid = str(appid)
+    if not re.fullmatch(r'\d+', appid):
+        raise ValueError('AppID inválido')
+    patch_path = require_patch(patch)
+    destination = Path(destination).expanduser()
+    if destination.is_symlink():
+        raise ValueError('destino é um link simbólico; recusado por segurança')
+    if destination.exists():
+        if not destination.is_dir():
+            raise ValueError('destino existe e não é uma pasta')
+        if any(destination.iterdir()) and not force:
+            raise ValueError('destino não está vazio; use --force para sobrescrever')
+    else:
+        destination.mkdir(parents=True)
+    source = Path(__file__).resolve()
+    if not source.is_file():
+        raise ValueError('não consegui localizar netsock.py para exportar')
+    shutil.copy2(source, destination/'netsock.py')
+    target_patch = destination/'netsock.so'
+    if target_patch.resolve() != patch_path.resolve():
+        shutil.copy2(patch_path, target_patch)
+    installer = destination/'instalar.sh'
+    installer.write_text(INSTALLER_TEMPLATE.replace('__APPID__', appid), encoding='utf-8')
+    installer.chmod(0o755)
+    (destination/'LEIA-ME.txt').write_text(
+        README_TEMPLATE.replace('__APPID__', appid), encoding='utf-8')
+    digest = hashlib.sha256(target_patch.read_bytes()).hexdigest()
+    (destination/'SHA256SUMS').write_text('%s  netsock.so\n' % digest, encoding='utf-8')
+    return {'path': destination, 'patch': patch_path, 'installer': installer,
+            'sha256': digest}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Configura o LD_AUDIT do patch SLSsteam nas opções da Steam.')
     sub = parser.add_subparsers(dest='action', required=True)
@@ -703,11 +805,24 @@ def main(argv=None):
         item.add_argument('--userdata')
         item.add_argument('--dry-run', action='store_true')
         item.add_argument('--force', action='store_true')
+    exported = sub.add_parser('export')
+    exported.add_argument('--appid', required=True)
+    exported.add_argument('--patch')
+    exported.add_argument('--dest', required=True)
+    exported.add_argument('--force', action='store_true')
     args = parser.parse_args(argv)
     if not re.fullmatch(r'\d+', str(args.appid)):
         print('Erro: AppID inválido', file=sys.stderr)
         return 1
     try:
+        if args.action == 'export':
+            result = export_bundle(args.dest, args.appid, args.patch, force=args.force)
+            print('Pacote criado em: %s' % result['path'])
+            print('Patch: %s' % result['patch'])
+            print('SHA-256: %s' % result['sha256'])
+            print('Envie a pasta (ou um zip dela) para o outro PC e execute:')
+            print('  bash instalar.sh')
+            return 0
         if args.action == 'status':
             print(format_diagnostics(diagnostics(args.steam_root, args.appid, args.patch, args.userdata)))
             return 0

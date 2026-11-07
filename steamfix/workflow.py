@@ -28,6 +28,7 @@ NETSOCK_ACTIONS = [
     ('Verificar situação\nMostra o patch, as opções da Steam, o processo do jogo e os últimos erros.', 'status'),
     ('Ativar/atualizar nas opções da Steam\nExige a Steam fechada; cria backup de localconfig.vdf.', 'apply'),
     ('Remover das opções da Steam\nRemove o LD_AUDIT do patch; também cria backup.', 'remove'),
+    ('Exportar patch para outro PC\nCopia o netsock.so e um instalador para uma pasta; envie ao amigo.', 'export'),
     ('Voltar', 'back'),
 ]
 
@@ -118,6 +119,20 @@ def netsock_menu(folder, prefix, options):
             except (OSError, ValueError) as exc:
                 message(str(exc), 'Patch de rede')
                 continue
+        if action == 'export':
+            default = Path.home()/f'netsock-{appid}'
+            answer = ask(f'Pasta de destino (Enter para {default}): ')
+            destination = Path(answer).expanduser() if answer else default
+            try:
+                result = netsock.export_bundle(destination, appid, patch=str(patch))
+            except (OSError, ValueError) as exc:
+                message(str(exc), 'Patch de rede')
+                continue
+            message(f'Pacote criado em: {result["path"]}\n'
+                    f'SHA-256: {result["sha256"]}\n\n'
+                    'Envie a pasta (ou um zip dela) para o outro PC. '
+                    'Lá, feche a Steam e execute: bash instalar.sh', 'Patch exportado')
+            continue
         if info['steam_running']:
             message('Feche a Steam completamente antes de alterar as opções de inicialização. '
                     'Se ela ficar aberta, pode sobrescrever o arquivo ao sair.', 'Steam em execução')

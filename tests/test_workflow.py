@@ -21,7 +21,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('netsock', [value for _, value in workflow.ADVANCED_ACTIONS])
         self.assertNotIn('netsock', [value for _, value in workflow.MAIN_ACTIONS])
         self.assertEqual([value for _, value in workflow.NETSOCK_ACTIONS],
-                         ['status', 'apply', 'remove', 'back'])
+                         ['status', 'apply', 'remove', 'export', 'back'])
 
     def test_netsock_menu_back_does_not_write(self):
         info = {'patch': None, 'patch_exists': False, 'steam_running': False,

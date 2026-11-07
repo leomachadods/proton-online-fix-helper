@@ -151,7 +151,7 @@ Ctrl+C sai da interface, mas **não encerra processos Proton já iniciados**.
 | Ver alterações propostas | Mostra overrides propostos, sem executar Proton nem abrir jogos. |
 | Configurar sem abrir o jogo | Configura os overrides para as DLLs detectadas. |
 | Desfazer configuração de DLLs | Remove os overrides das DLLs selecionadas; não desfaz importações. |
-| Patch de rede (SteamSockets) | Opt-in: verifica e configura o `LD_AUDIT` do patch SLSsteam nas opções de inicialização da Steam. Exige a Steam fechada e cria backup de `localconfig.vdf`. |
+| Patch de rede (SteamSockets) | Opt-in: verifica, configura e exporta o `LD_AUDIT` do patch SLSsteam para outro PC. Exige a Steam fechada para gravar e cria backup de `localconfig.vdf`. |
 
 ### Patch de rede (opt-in)
 
@@ -179,6 +179,31 @@ bash steam-dll-fix.sh netsock --appid 123 --status
 bash steam-dll-fix.sh netsock --appid 123 --apply
 bash steam-dll-fix.sh netsock --appid 123 --remove
 ```
+
+### Levar o patch para outro PC
+
+O patch só é necessário no lado que recebe o erro de certificado. Se o seu
+amigo hospeda a partida e você já tem o patch, tente entrar normalmente: ele
+pode não precisar instalar nada. Se ele também precisar, exporte o seu arquivo
+com um instalador:
+
+```bash
+bash steam-dll-fix.sh netsock --appid 123 --export /caminho/pasta
+```
+
+A pasta gerada contém `netsock.so`, `netsock.py`, `instalar.sh`, `LEIA-ME.txt`
+e `SHA256SUMS`. Envie a pasta (ou um zip dela) para o outro PC. Lá, com a Steam
+fechada:
+
+```bash
+bash instalar.sh
+```
+
+O instalador confere o checksum quando possível, mostra a situação, adiciona o
+`LD_AUDIT` e cria backup. O projeto não baixa o patch: ele apenas copia um
+arquivo que já existe no seu computador. O `netsock.so` é de terceiros e não é
+verificado pelo projeto; compartilhe apenas com quem confia e respeite a
+licença aplicável.
 
 
 ## Segurança e backup

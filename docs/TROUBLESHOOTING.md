@@ -68,6 +68,19 @@ bash steam-dll-fix.sh netsock --appid 4210580 --status
 bash steam-dll-fix.sh netsock --appid 4210580 --apply
 ```
 
+O patch só é necessário no lado que recebe o erro de certificado. Se o amigo
+hospeda a partida, tente entrar com o patch apenas no seu PC antes de pedir que
+ele instale algo. Se ele também precisar, exporte o seu patch com instalador:
+
+```bash
+bash steam-dll-fix.sh netsock --appid 4210580 --export /pasta/para-o-amigo
+```
+
+Envie a pasta gerada; no outro PC, com a Steam fechada, execute
+`bash instalar.sh`. O projeto apenas copia um arquivo que já existe no seu PC;
+o `netsock.so` é de terceiros, não é verificado e deve ser compartilhado apenas
+com quem confia.
+
 Para verificar o que está ativo:
 
 ```bash
