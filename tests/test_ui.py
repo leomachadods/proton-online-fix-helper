@@ -5,6 +5,9 @@ import pty
 import subprocess
 import sys
 import unittest
+from unittest.mock import patch
+
+from steamfix import ui
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,3 +41,14 @@ class TerminalTests(unittest.TestCase):
             text=True, start_new_session=True, timeout=5)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('terminal', result.stderr)
+
+    def test_confirm_uses_yes_and_no_options(self):
+        with patch.object(ui, 'choose', return_value=True) as choose:
+            self.assertTrue(ui.confirm('Aplicar?', default=True))
+        labels = [label.splitlines()[0] for label, _ in choose.call_args[0][0]]
+        self.assertEqual(labels, ['Sim', 'Não'])
+
+        with patch.object(ui, 'choose', return_value=False) as choose:
+            self.assertFalse(ui.confirm('Remover?', default=False))
+        labels = [label.splitlines()[0] for label, _ in choose.call_args[0][0]]
+        self.assertEqual(labels, ['Não', 'Sim'])

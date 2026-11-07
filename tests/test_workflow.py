@@ -74,6 +74,20 @@ class WorkflowTests(unittest.TestCase):
             workflow.play(self.folder, self.options)
         run.assert_not_called()
 
+    def test_import_confirmation_uses_yes_no_buttons(self):
+        source = self.folder/'pacote'
+        source.mkdir()
+        (source/'winmm.dll').write_text('novo')
+        game = self.folder/'jogo'
+        game.mkdir()
+        with patch.object(workflow, 'ask', return_value=str(source)), \
+                patch.object(workflow, 'message'), \
+                patch.object(workflow, 'confirm', return_value=False) as confirm, \
+                patch.object(workflow.packages, 'import_package') as import_package:
+            self.assertFalse(workflow.import_files(game))
+        confirm.assert_called_once()
+        import_package.assert_not_called()
+
     def test_advanced_back_returns_to_main(self):
         with patch.object(workflow, 'choose', side_effect=['advanced', 'back', 'exit']), \
                 patch.object(workflow, 'run_backend') as run:

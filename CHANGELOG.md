@@ -9,6 +9,8 @@
   backup de `localconfig.vdf`; o projeto continua sem validar o patch.
 - Documentação reforça que o patch só é necessário no lado que recebe o erro
   de certificado e que ele não garante conexão online.
+- Confirmações da TUI agora usam opções selecionáveis **Sim/Não** em vez de
+  exigir a digitação de palavras como `APLICAR` ou `COPIAR`.
 
 ## 1.2.0
 

@@ -84,6 +84,15 @@ def choose(items, title, description=''):
         print('Escolha inválida.', flush=True)
 
 
+def confirm(text, title='Confirmação', default=False):
+    """Confirmação com opções selecionáveis (Sim/Não), sem digitar palavras."""
+    options = [('Sim\nConfirmar a alteração.', True),
+               ('Não\nVoltar sem alterar nada.', False)]
+    if not default:
+        options.reverse()
+    return bool(choose(options, title, text))
+
+
 def location(value):
     if not value.strip():
         raise ValueError('Caminho vazio.')

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from . import netsock
 from . import packages
-from .ui import ask, choose, location, message, status, run_command
+from .ui import ask, choose, confirm, location, message, status, run_command
 
 BACKEND = Path(__file__).resolve().parents[1]/'steam-dll-fix.sh'
 
@@ -52,7 +52,9 @@ def import_files(folder):
     message('Arquivos que serão copiados:\n' + '\n'.join(str(p.relative_to(source)) for p in files) +
             '\n\nEsses arquivos podem executar código no seu computador.\n'
             'Arquivos substituídos serão guardados em backup.', 'Revisar pacote')
-    if ask('Digite COPIAR para instalar, ou Enter para voltar: ') != 'COPIAR':
+    if not confirm('Copiar estes arquivos para a pasta do jogo? '
+                   'Os arquivos substituídos serão guardados em backup.',
+                   'Confirmar importação', default=False):
         return False
     backup = packages.import_package(source, folder)
     message(f'Arquivos instalados. Backup: {backup}', 'Pacote instalado')
@@ -153,8 +155,11 @@ def netsock_menu(folder, prefix, options):
         message(f'Configuração: {path}\n\nAntes:\n{current or "(vazio)"}\n\n'
                 f'Depois:\n{proposed}\n\nA Steam já deve estar fechada. '
                 'Um backup de localconfig.vdf será criado antes da alteração.', 'Revisar alteração')
-        confirmation = 'APLICAR' if action == 'apply' else 'REMOVER'
-        if ask(f'Digite {confirmation} para continuar: ') != confirmation:
+        if not confirm('Aplicar esta alteração nas opções de inicialização da Steam?'
+                       if action == 'apply' else
+                       'Remover o LD_AUDIT do patch das opções da Steam?',
+                       'Confirmar aplicação' if action == 'apply' else 'Confirmar remoção',
+                       default=(action == 'apply')):
             continue
         try:
             function = netsock.apply if action == 'apply' else netsock.remove
@@ -208,7 +213,8 @@ def advanced(folder, prefix, proton, options):
             continue
         if action in ('apply', 'remove', 'check'):
             message('Esta ação executa Proton. As DLLs presentes devem ser confiáveis.', 'Confirmação')
-            if ask('Continuar? [s/N]: ').lower() != 's':
+            if not confirm('Esta ação executa Proton e pode alterar o prefixo. Continuar?',
+                           'Confirmação', default=False):
                 continue
         command = 'apply' if action == 'preview' else action
         extra = ['--dry-run'] if action == 'preview' else []
