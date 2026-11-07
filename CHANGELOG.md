@@ -1,8 +1,15 @@
 # Changelog
 
-## Próxima versão
+## 1.2.0
 
-- Removida a integração com patches de certificado; o projeto não configura LD_AUDIT.
+- Ação avançada opt-in **Patch de rede (SteamSockets)**: verifica e configura o
+  `LD_AUDIT` do patch SLSsteam nas opções de inicialização da Steam.
+- Diagnóstico mostra patch, opções atuais, processo do jogo, `audit_patch.log`
+  e erros recentes de conexão no `Player.log`.
+- Gravação com backup automático de `localconfig.vdf`, verificação do resultado
+  e exigência de Steam fechada; a opção pode ser removida.
+- O projeto continua sem baixar, incluir ou validar patches; a ação não garante
+  conexão online e não altera o fluxo principal de overrides de DLL.
 - Ação principal para aplicar a configuração sem iniciar o jogo.
 - Documentação esclarece que overrides não redirecionam servidores automaticamente.
 

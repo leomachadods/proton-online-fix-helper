@@ -17,6 +17,28 @@ class WorkflowTests(unittest.TestCase):
     def test_main_has_separate_prepare_and_play_choices(self):
         self.assertEqual([v for _, v in workflow.MAIN_ACTIONS], ['play', 'prepare', 'advanced', 'exit'])
 
+    def test_network_patch_is_available_only_in_advanced(self):
+        self.assertIn('netsock', [value for _, value in workflow.ADVANCED_ACTIONS])
+        self.assertNotIn('netsock', [value for _, value in workflow.MAIN_ACTIONS])
+        self.assertEqual([value for _, value in workflow.NETSOCK_ACTIONS],
+                         ['status', 'apply', 'remove', 'back'])
+
+    def test_netsock_menu_back_does_not_write(self):
+        info = {'patch': None, 'patch_exists': False, 'steam_running': False,
+                'active_steam_id': None, 'configs': [], 'appid': '4210580',
+                'processes': [], 'audit_log': None, 'player_log': None}
+        with patch.object(workflow.netsock, 'diagnostics', return_value=info), \
+                patch.object(workflow, 'choose', return_value='back'), \
+                patch.object(workflow, 'message') as message:
+            workflow.netsock_menu(Path('/game'), Path('/prefix'),
+                                  ['--steam-root', '/steam', '--appid', '4210580'])
+        message.assert_not_called()
+
+    def test_option_value_and_missing_option(self):
+        options = ['--appid', '4210580', '--steam-root', '/tmp/Steam']
+        self.assertEqual(workflow._option_value(options, '--appid'), '4210580')
+        self.assertEqual(workflow._option_value(options, '--missing'), '')
+
     def test_prepare_only_never_requests_launch(self):
         (self.folder/'winmm.dll').touch()
         with patch.object(workflow, 'choose', side_effect=['prepare', 'exit']), \

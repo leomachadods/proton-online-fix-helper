@@ -96,6 +96,10 @@ usados, que podem continuar sendo da Steam. Aplicar overrides não muda por si s
 servidores, certificados, AppIDs ou compatibilidade entre salas. Não é possível
 garantir a conexão multiplayer apenas pela conclusão da configuração.
 
+A ação avançada **Patch de rede (SteamSockets)** é opt-in e apenas configura um
+`LD_AUDIT` já instalado nas opções da Steam; veja
+[Patch de rede (opt-in)](#patch-de-rede-opt-in).
+
 ## Navegação na TUI
 
 A interface abre em tela cheia. A opção selecionada fica destacada; os detalhes
@@ -147,6 +151,35 @@ Ctrl+C sai da interface, mas **não encerra processos Proton já iniciados**.
 | Ver alterações propostas | Mostra overrides propostos, sem executar Proton nem abrir jogos. |
 | Configurar sem abrir o jogo | Configura os overrides para as DLLs detectadas. |
 | Desfazer configuração de DLLs | Remove os overrides das DLLs selecionadas; não desfaz importações. |
+| Patch de rede (SteamSockets) | Opt-in: verifica e configura o `LD_AUDIT` do patch SLSsteam nas opções de inicialização da Steam. Exige a Steam fechada e cria backup de `localconfig.vdf`. |
+
+### Patch de rede (opt-in)
+
+Alguns jogos usam `SteamNetworkingSockets` e falham ao conectar com
+`Cert is not authorized for appid X, only Y`. O assistente **não baixa, não
+inclui e não valida** patches. Se você já tiver o patch `netsock.so` do
+SLSsteam instalado, a opção avançada **Patch de rede (SteamSockets)** pode
+adicioná-lo às opções de inicialização da Steam:
+
+```text
+WINEDLLOVERRIDES="winmm=n,b" LD_AUDIT="/caminho/para/netsock.so" %command%
+```
+
+Isso só altera lançamentos feitos pela Steam; não é aplicado quando o
+assistente abre o jogo diretamente pelo Proton. Feche a Steam antes de gravar,
+pois ela pode sobrescrever o arquivo ao sair. Um backup de `localconfig.vdf` é
+criado. A ação **não garante conexão online**: os dois jogadores precisam de
+versão do jogo, pacote e AppID falso compatíveis, e o patch pode deixar de
+funcionar após atualizações da Steam.
+
+Pela CLI:
+
+```bash
+bash steam-dll-fix.sh netsock --appid 123 --status
+bash steam-dll-fix.sh netsock --appid 123 --apply
+bash steam-dll-fix.sh netsock --appid 123 --remove
+```
+
 
 ## Segurança e backup
 
@@ -159,11 +192,15 @@ restaurar, feche o jogo e copie os originais de volta. Os arquivos novos listado
 em `arquivos-copiados.txt` precisam ser avaliados separadamente: **remover overrides
 não remove os arquivos importados**. Guarde o backup até confirmar o resultado.
 
-O projeto não integra patches de memória nem contorna verificações de certificado.
-O ajuste principal é configurar o carregamento das DLLs locais via overrides no
-prefixo Proton. Ele não baixa pacotes nem altera AppIDs automaticamente.
-Configurações externas, como opções de lançamento já salvas na Steam, não são
-removidas ou modificadas pelo assistente.
+O projeto não inclui nem baixa patches de memória. A ação avançada
+**Patch de rede (SteamSockets)** é opt-in, não é aplicada automaticamente e
+apenas grava um `LD_AUDIT` que aponta para um arquivo que você já instalou. Ela
+não é necessária nem suficiente para todos os jogos e pode ser desfeita com
+**Remover**. O ajuste principal continua sendo configurar o carregamento das
+DLLs locais via overrides no prefixo Proton. O assistente não altera AppIDs
+automaticamente. Configurações externas, como opções de lançamento já salvas na
+Steam, não são removidas ou modificadas pelo assistente, exceto pela ação
+explícita de patch de rede, que preserva as demais opções e cria backup.
 
 ## CLI (opcional)
 

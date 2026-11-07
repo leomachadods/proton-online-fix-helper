@@ -54,9 +54,28 @@ Indica uma incompatibilidade entre a autorização do certificado e o AppID usad
 na conexão. **Não significa simplesmente que falta carregar uma DLL.**
 
 Não troque IDs ao acaso. A correção depende da licença, do pacote e da sessão
-dos dois jogadores. O projeto não desativa essa validação nem inclui integração
-com patches de certificado. O override de DLLs não resolve necessariamente esse
-erro de conexão; ele apenas permite que o pacote local seja carregado.
+dos dois jogadores. O override de DLLs não resolve necessariamente esse erro de
+conexão; ele apenas permite que o pacote local seja carregado.
+
+Se você já usa o patch `netsock.so` do SLSsteam, a ação avançada **Patch de rede
+(SteamSockets)** pode configurar o `LD_AUDIT` nas opções de inicialização da
+Steam. Feche a Steam antes de aplicar; um backup de `localconfig.vdf` é criado.
+A opção não garante conexão: os dois jogadores precisam de versão, pacote e
+AppID falso compatíveis. O projeto não baixa nem inclui o patch. Pela CLI:
+
+```bash
+bash steam-dll-fix.sh netsock --appid 4210580 --status
+bash steam-dll-fix.sh netsock --appid 4210580 --apply
+```
+
+Para verificar o que está ativo:
+
+```bash
+bash steam-dll-fix.sh netsock --appid 4210580 --status
+```
+
+O diagnóstico lê `audit_patch.log`, o processo do jogo e o `Player.log` do
+prefixo. Remova a opção com `--remove` se ela não ajudar.
 
 ## `Unsupported SteamUtils version`
 

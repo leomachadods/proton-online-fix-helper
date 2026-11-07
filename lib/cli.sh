@@ -2,12 +2,13 @@
 COMMAND=""; GAME_DIR=""; APPID=""; COMPAT_ID=""; PROTON=""
 WANT_DLLS=""; FAKE_APPID=""; REAL_APPID=""; TIMEOUT=45
 DRY=0; FORCE=0; ALL_DLLS=0; SAVE=0; USE_CONFIG=1
+NETSOCK_ACTION="status"; NETSOCK_PATCH=""; NETSOCK_USERDATA=""; NETSOCK_OPT=0
 REG_KEY='HKCU\Software\Wine\DllOverrides'
 declare -a EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        check|apply|remove|launch|list) COMMAND="$1" ;;
+        check|apply|remove|launch|list|netsock) COMMAND="$1" ;;
         -h|--help)        usage; exit 0 ;;
         -V|--version)     printf '%s %s\n' "$PROGNAME" "$VERSION"; exit 0 ;;
         --path)           GAME_DIR="${2:?--path precisa de um caminho}"; shift ;;
@@ -17,6 +18,11 @@ while [[ $# -gt 0 ]]; do
         --all-dlls)       ALL_DLLS=1 ;;
         --proton)         PROTON="${2:?--proton precisa de um caminho}"; shift ;;
         --steam-root)     STEAM_ROOT="${2:?--steam-root precisa de um caminho}"; shift ;;
+        --patch)          NETSOCK_PATCH="${2:?--patch precisa de um caminho}"; NETSOCK_OPT=1; shift ;;
+        --userdata)       NETSOCK_USERDATA="${2:?--userdata precisa de um caminho}"; NETSOCK_OPT=1; shift ;;
+        --status)         NETSOCK_ACTION="status"; NETSOCK_OPT=1 ;;
+        --apply)          NETSOCK_ACTION="apply"; NETSOCK_OPT=1 ;;
+        --remove)         NETSOCK_ACTION="remove"; NETSOCK_OPT=1 ;;
         --fake-appid)     FAKE_APPID="${2:?--fake-appid precisa de um valor}"; shift ;;
         --real-appid)     REAL_APPID="${2:?--real-appid precisa de um valor}"; shift ;;
         --timeout)        TIMEOUT="${2:?--timeout precisa de um valor}"; shift ;;
@@ -31,7 +37,13 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-[[ -n "$COMMAND" ]] || { usage; die "informe um comando: check, apply, remove, launch ou list"; }
+[[ -n "$COMMAND" ]] || { usage; die "informe um comando: check, apply, remove, launch, netsock ou list"; }
+if (( NETSOCK_OPT )) && [[ "$COMMAND" != "netsock" ]]; then
+    die "opções de netsock exigem o comando netsock"
+fi
+if [[ "$COMMAND" == "netsock" && -z "$APPID" ]]; then
+    die "netsock requer --appid (o AppID do jogo na Steam)"
+fi
 [[ -z "$COMPAT_ID" || "$COMPAT_ID" =~ ^[0-9]+$ ]] || die "compatdata deve ser numérico"
 [[ -z "$APPID" || "$APPID" =~ ^[0-9]+$ ]] || die "appid deve ser numérico"
 [[ -z "$FAKE_APPID" || "$FAKE_APPID" =~ ^[0-9]+$ ]] || die "fake-appid deve ser numérico"
@@ -48,6 +60,19 @@ if [[ "$COMMAND" == "list" ]]; then
     steam_root >/dev/null || die "não achei o Steam (use --steam-root)"
     cmd_list
     exit 0
+fi
+
+if [[ "$COMMAND" == "netsock" ]]; then
+    steam_root >/dev/null || die "não achei o Steam (use --steam-root)"
+    command -v python3 >/dev/null || die "netsock requer Python 3.9+"
+    ns_args=( "$NETSOCK_ACTION" --steam-root "$(steam_root)" --appid "$APPID" )
+    [[ -n "$NETSOCK_PATCH" ]] && ns_args+=( --patch "$NETSOCK_PATCH" )
+    [[ -n "$NETSOCK_USERDATA" ]] && ns_args+=( --userdata "$NETSOCK_USERDATA" )
+    (( DRY )) && ns_args+=( --dry-run )
+    (( FORCE )) && ns_args+=( --force )
+    PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}" \
+        python3 -m steamfix.netsock "${ns_args[@]}"
+    exit $?
 fi
 
 # --- --path pode ser a pasta do jogo ou o próprio executável ---

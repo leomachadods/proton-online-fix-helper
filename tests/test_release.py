@@ -8,13 +8,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseTests(unittest.TestCase):
-    def test_no_certificate_patch_integration_in_runtime(self):
+    def test_network_patch_is_opt_in_and_not_automatic(self):
+        # O patch de rede é uma ação explícita no submenu avançado. O backend
+        # de launch não define LD_AUDIT por conta própria.
         self.assertFalse((ROOT/'lib/netsock.sh').exists())
-        for pattern in ('*.sh', 'lib/*.sh', 'steamfix/*.py'):
-            for path in ROOT.glob(pattern):
-                source = path.read_text()
-                self.assertNotIn('netsock', source.casefold(), str(path))
-                self.assertNotIn('LD_AUDIT', source, str(path))
+        for path in ROOT.glob('lib/*.sh'):
+            self.assertNotIn('LD_AUDIT', path.read_text(), str(path))
+        self.assertTrue((ROOT/'steamfix/netsock.py').is_file())
+        workflow = (ROOT/'steamfix/workflow.py').read_text()
+        self.assertIn("'netsock'", workflow)
+        self.assertIn('NETSOCK_ACTIONS', workflow)
 
     def test_removed_patch_flag_is_rejected(self):
         result = subprocess.run(['bash', str(ROOT/'steam-dll-fix.sh'), 'launch',

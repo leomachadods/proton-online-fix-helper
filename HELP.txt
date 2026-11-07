@@ -8,22 +8,33 @@ COMANDOS
   apply      Configura overrides das DLLs detectadas.
   remove     Remove overrides; não remove arquivos importados.
   launch     Aplica o que faltar e executa o jogo.
+  netsock    Verifica/configura o LD_AUDIT do patch SLSsteam nas
+             opções de inicialização da Steam. Ação opt-in.
   list       Lista prefixos e jogos com DLLs candidatas.
 
 OPÇÕES
   --path DIR        Pasta do jogo ou caminho de um executável.
                     O backend ainda escolhe o executável por heurística.
   --appid N         AppID de um jogo na biblioteca principal do Steam.
+                    Obrigatório em netsock.
   --compatdata ID   ID do prefixo Proton existente.
   --proton DIR      Pasta que contém o programa proton.
   --steam-root DIR  Instalação principal do Steam.
   --dll a,b,c       Nomes de DLLs sem extensão; substitui a seleção automática.
   --all-dlls        Ignora heurística de conflito; use com cuidado.
   --force           Permite overrides de DLLs de núcleo. Pode quebrar o prefixo.
+                    Em netsock, permite gravar com a Steam aberta e substituir
+                    um LD_AUDIT diferente.
   --fake-appid N    Alteração explícita de FakeAppId no OnlineFix.ini.
   --real-appid N    Alteração explícita de RealAppId no OnlineFix.ini.
                     Não corrigem certificados nem autorização universalmente.
+  --patch CAMINHO   Caminho do netsock.so (padrão: ~/.config/SLSsteam/tools/netsock/netsock.so).
+  --userdata DIR    Conta Steam específica (pasta userdata ou localconfig.vdf).
+  --status          Em netsock, mostra a situação (padrão).
+  --apply           Em netsock, grava a opção de inicialização.
+  --remove          Em netsock, remove a opção de inicialização.
   --dry-run         Em apply/launch, não grava configurações nem executa Proton.
+                    Em netsock, mostra o que seria gravado sem alterar o arquivo.
   --save            Salva opções para este jogo (apply/launch).
   --no-config       Ignora opções salvas.
   --timeout N       Parâmetro legado; não há comando de verificação exposto.
@@ -35,6 +46,13 @@ EXEMPLOS (IDs são ilustrativos)
   bash steam-dll-fix.sh apply --path "/pasta/do/jogo" --compatdata 123 --dry-run
   bash steam-dll-fix.sh check --path "/pasta/do/jogo" --compatdata 123
   bash steam-dll-fix.sh launch --appid 123
+  bash steam-dll-fix.sh netsock --appid 123 --status
+  bash steam-dll-fix.sh netsock --appid 123 --apply
+  bash steam-dll-fix.sh netsock --appid 123 --remove
+
+O patch netsock não é baixado nem incluído pelo projeto. A Steam precisa
+estar fechada para gravar; um backup de localconfig.vdf é criado. A opção só
+afeta lançamentos feitos pela Steam e não garante conexão online.
 
 Prefixo: configuração salva -> atalho Steam -> escolha interativa.
 Na CLI, descoberta de bibliotecas externas/Flatpak é limitada. O menu possui

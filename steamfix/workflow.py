@@ -1,6 +1,7 @@
 """Fluxo simples para jogar; ferramentas técnicas ficam no submenu avançado."""
 from pathlib import Path
 
+from . import netsock
 from . import packages
 from .ui import ask, choose, location, message, status, run_command
 
@@ -19,6 +20,14 @@ ADVANCED_ACTIONS = [
     ('Ver alterações propostas\nSó mostra o que seria configurado, sem executar Proton.', 'preview'),
     ('Configurar sem abrir o jogo\nAplica os overrides das DLLs já presentes.', 'apply'),
     ('Desfazer configuração de DLLs\nRemove overrides; não restaura nem apaga arquivos importados.', 'remove'),
+    ('Patch de rede (SteamSockets)\nOpt-in: verifica/configura o LD_AUDIT do SLSsteam nas opções da Steam.', 'netsock'),
+    ('Voltar', 'back'),
+]
+
+NETSOCK_ACTIONS = [
+    ('Verificar situação\nMostra o patch, as opções da Steam, o processo do jogo e os últimos erros.', 'status'),
+    ('Ativar/atualizar nas opções da Steam\nExige a Steam fechada; cria backup de localconfig.vdf.', 'apply'),
+    ('Remover das opções da Steam\nRemove o LD_AUDIT do patch; também cria backup.', 'remove'),
     ('Voltar', 'back'),
 ]
 
@@ -55,6 +64,97 @@ def has_loader(folder):
     return bool(names & {'winmm.dll', 'version.dll', 'winhttp.dll', 'dinput8.dll', 'dxgi.dll'})
 
 
+def _option_value(options, name):
+    try:
+        return options[options.index(name) + 1]
+    except (ValueError, IndexError):
+        return ''
+
+
+def netsock_menu(folder, prefix, options):
+    root = _option_value(options, '--steam-root')
+    appid = _option_value(options, '--appid')
+    if not appid and prefix.name.isdecimal():
+        appid = prefix.name
+    if not root:
+        message('Não foi possível identificar a instalação do Steam. '
+                'Use a CLI com --steam-root.', 'Patch de rede')
+        return
+    if not appid:
+        message('Este jogo não tem um AppID da Steam identificado. '
+                'Use a CLI: bash steam-dll-fix.sh netsock --appid N --status', 'Patch de rede')
+        return
+    while True:
+        try:
+            info = netsock.diagnostics(root, appid)
+        except (OSError, ValueError) as exc:
+            message(str(exc), 'Patch de rede')
+            return
+        details = netsock.format_diagnostics(info)
+        action = choose(NETSOCK_ACTIONS, 'Patch de rede (SteamSockets)',
+                        details + '\n\n'
+                        'Ação opt-in para jogos que usam SteamNetworkingSockets. '
+                        'O projeto não baixa nem inclui o patch: informe um netsock.so já instalado. '
+                        'A opção vale para lançamentos pela Steam. Feche a Steam antes de gravar. '
+                        'Não garante conexão online: os dois jogadores precisam de versão e '
+                        'AppID falso compatíveis.')
+        if action == 'back':
+            return
+        if action == 'status':
+            message(netsock.format_diagnostics(info), 'Status do patch de rede')
+            continue
+        patch = info['patch']
+        if patch is None or not info['patch_exists']:
+            answer = ask('Caminho do netsock.so (Enter para voltar): ')
+            if not answer:
+                continue
+            candidate = Path(answer).expanduser()
+            if not candidate.is_file():
+                message(f'Arquivo não encontrado: {candidate}', 'Patch de rede')
+                continue
+            patch = candidate
+            try:
+                info = netsock.diagnostics(root, appid, patch=str(patch))
+            except (OSError, ValueError) as exc:
+                message(str(exc), 'Patch de rede')
+                continue
+        if info['steam_running']:
+            message('Feche a Steam completamente antes de alterar as opções de inicialização. '
+                    'Se ela ficar aberta, pode sobrescrever o arquivo ao sair.', 'Steam em execução')
+            continue
+        try:
+            path, current = netsock.current_launch_options(root, appid)
+            if action == 'apply':
+                proposed = netsock.compose_launch_options(current, patch)
+            else:
+                proposed = netsock.strip_launch_options(current, patch)
+        except (OSError, ValueError) as exc:
+            message(str(exc), 'Patch de rede')
+            continue
+        if proposed == current:
+            message('O LD_AUDIT já está configurado.' if action == 'apply'
+                    else 'O LD_AUDIT do patch não está presente.', 'Patch de rede')
+            continue
+        message(f'Configuração: {path}\n\nAntes:\n{current or "(vazio)"}\n\n'
+                f'Depois:\n{proposed}\n\nA Steam já deve estar fechada. '
+                'Um backup de localconfig.vdf será criado antes da alteração.', 'Revisar alteração')
+        confirmation = 'APLICAR' if action == 'apply' else 'REMOVER'
+        if ask(f'Digite {confirmation} para continuar: ') != confirmation:
+            continue
+        try:
+            function = netsock.apply if action == 'apply' else netsock.remove
+            result = function(root, appid, patch=str(patch))
+        except (OSError, ValueError) as exc:
+            message(str(exc), 'Falha ao alterar as opções')
+            continue
+        if result['changed']:
+            message(f'Opção gravada em {result["path"]}.\n'
+                    f'Backup: {result["backup"]}\n\n'
+                    'Abra a Steam de novo e inicie o jogo para carregar o patch.', 'Patch de rede')
+        else:
+            message('Nada a alterar.', 'Patch de rede')
+
+
 def play(folder, options, start_game=True):
     if not has_loader(folder):
         action = choose([
@@ -85,6 +185,9 @@ def advanced(folder, prefix, proton, options):
                         'Feche o jogo antes de modificar arquivos ou configurações.')
         if action == 'back':
             return
+        if action == 'netsock':
+            netsock_menu(folder, prefix, options)
+            continue
         if action == 'import':
             import_files(folder)
             continue

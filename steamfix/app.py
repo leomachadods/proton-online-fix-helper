@@ -95,4 +95,6 @@ def main():
         stage += 1
     options = ['--path', str(folder), '--compatdata', prefix.name,
                '--steam-root', str(root), '--proton', str(proton), '--no-config']
+    if appid:
+        options += ['--appid', appid]
     actions_menu(folder, prefix, proton, options)
